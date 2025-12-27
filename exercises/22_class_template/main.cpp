@@ -32,23 +32,26 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
-        unsigned int size = 1;
-        for (auto i = 0; i < 4; ++i) {
-            size *= shape[i];
-        }
-        for (auto i = 0; i < size; ++i) {
-            // 计算 others 中对应的索引
-            unsigned int idx = 0;
-            unsigned int stride = 1;
-            for (auto dim = 3; dim < 4; --dim) {
-                unsigned int index_in_dim = (i / stride) % shape[dim];
-                if (others.shape[dim] == 1) {
-                    index_in_dim = 0;
+        for (auto n = 0u; n < shape[0]; ++n) {
+            auto n_other = (others.shape[0] == 1) ? 0 : n;
+            for (auto c = 0u; c < shape[1]; ++c) {
+                auto c_other = (others.shape[1] == 1) ? 0 : c;
+                for (auto h = 0u; h < shape[2]; ++h) {
+                    auto h_other = (others.shape[2] == 1) ? 0 : h;
+                    for (auto w = 0u; w < shape[3]; ++w) {
+                        auto w_other = (others.shape[3] == 1) ? 0 : w;
+                        auto idx = n * shape[1] * shape[2] * shape[3]
+                                   + c * shape[2] * shape[3]
+                                   + h * shape[3]
+                                   + w;
+                        auto idx_other = n_other * others.shape[1] * others.shape[2] * others.shape[3]
+                                         + c_other * others.shape[2] * others.shape[3]
+                                         + h_other * others.shape[3]
+                                         + w_other;
+                        data[idx] += others.data[idx_other];
+                    }
                 }
-                idx += index_in_dim * stride;
-                stride *= others.shape[dim];
             }
-            data[i] += others.data[idx];
         }
         return *this;
     }
